@@ -11,6 +11,7 @@ import {
   setActiveSchoolYear,
   updateTheme,
   resetTheme,
+  linkSupervisorParent,
 } from "./actions";
 
 export default async function SettingsPage() {
@@ -21,6 +22,15 @@ export default async function SettingsPage() {
   const { associationName, logoUrl } = await getSiteSettings(supabase);
   const theme = await getSiteTheme(supabase);
   const years = await getAllSchoolYears(supabase);
+
+  const { data: allProfiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, parent_supervisor_id, created_at")
+    .order("full_name", { ascending: true });
+
+  const orphanedSupervisors = (allProfiles || []).filter(
+    (p) => p.role === "supervisor" && !p.parent_supervisor_id
+  );
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -103,6 +113,48 @@ export default async function SettingsPage() {
           </button>
         </form>
       </div>
+
+      {orphanedSupervisors.length > 0 && (
+        <div className="card space-y-4 border-2 border-gold-500/50">
+          <h2 className="font-bold text-brand-900">
+            ⚠ حسابات مشرفين غير مرتبطة ({orphanedSupervisors.length})
+          </h2>
+          <p className="text-sm text-brand-700/70">
+            هذه الحسابات أنشأها أصحابها (غالباً عبر رابط دعوة لم يصل كاملاً)
+            لكنها غير مرتبطة بأي مشرف أب، لذلك لا تظهر تحت "عائلتي" للشخص
+            الذي دعاها. اختر المشرف الصحيح لكل حساب واضغط "ربط" لحلّها فوراً
+            دون الحاجة لأي أوامر SQL يدوية.
+          </p>
+          <ul className="divide-y divide-black/5">
+            {orphanedSupervisors.map((p) => (
+              <li key={p.id} className="py-3">
+                <form
+                  action={linkSupervisorParent}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2"
+                >
+                  <input type="hidden" name="profileId" value={p.id} />
+                  <span className="font-medium text-brand-900 sm:w-48 shrink-0">
+                    {p.full_name}
+                  </span>
+                  <select name="parentId" required className="input py-1.5 text-sm">
+                    <option value="">اختر المشرف الأب...</option>
+                    {(allProfiles || [])
+                      .filter((o) => o.id !== p.id)
+                      .map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.full_name} {o.role === "super_admin" ? "(مشرف عام)" : ""}
+                        </option>
+                      ))}
+                  </select>
+                  <button type="submit" className="btn-secondary text-sm shrink-0">
+                    ربط
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="card space-y-4">
         <h2 className="font-bold text-brand-900">السنوات الدراسية (الأرشيف)</h2>

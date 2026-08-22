@@ -81,6 +81,29 @@ export async function addSchoolYear(formData) {
   return { success: true };
 }
 
+export async function linkSupervisorParent(formData) {
+  const profile = await requireSuperAdmin();
+  if (!profile) return { error: "غير مصرح." };
+
+  const profileId = formData.get("profileId")?.toString();
+  const parentId = formData.get("parentId")?.toString();
+  if (!profileId || !parentId) return { error: "بيانات ناقصة." };
+  if (profileId === parentId) return { error: "لا يمكن ربط الحساب بنفسه." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ parent_supervisor_id: parentId })
+    .eq("id", profileId);
+
+  if (error) return { error: "تعذّر الربط." };
+
+  revalidatePath("/dashboard/admin/settings");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/family");
+  return { success: true };
+}
+
 export async function updateTheme(formData) {
   const profile = await requireSuperAdmin();
   if (!profile) return { error: "غير مصرح." };
