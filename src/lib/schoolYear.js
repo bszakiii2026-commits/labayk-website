@@ -1,11 +1,10 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
-export const TRIMESTER_LABELS = {
-  1: "الفصل الأول",
-  2: "الفصل الثاني",
-  3: "الفصل الثالث",
-};
+// يُعاد تصديره هنا لأن صفحات كثيرة (مكوّنات خادم) تستورده من هذا الملف؛
+// المصدر الفعلي في ملف منفصل خالٍ من أي استيراد خاص بالخادم حتى يبقى
+// صالحاً للاستعمال من مكوّنات العميل أيضاً (راجع ScanEditor و FamilySearch).
+export { TRIMESTER_LABELS } from "./schoolYearLabels";
 
 // دالة احتياطية فقط (تُستعمل إن لم يوجد أي صف بعد في جدول school_years،
 // مثلاً قبل تنفيذ migration_002). السنة الدراسية في الجزائر تبدأ في سبتمبر.

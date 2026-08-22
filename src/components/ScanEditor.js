@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { TRIMESTER_LABELS } from "@/lib/schoolYear";
+import { TRIMESTER_LABELS } from "@/lib/schoolYearLabels";
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {

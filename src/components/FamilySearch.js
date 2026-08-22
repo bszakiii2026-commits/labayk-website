@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { TRIMESTER_LABELS } from "@/lib/schoolYear";
+import { TRIMESTER_LABELS } from "@/lib/schoolYearLabels";
 
 // خانة بحث + جداول أفراد العائلة. البحث فوري (client-side) بالاسم أو
 // المستوى الدراسي أو اسم المشرف.
