@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/profile";
-import { getCurrentSchoolYear } from "@/lib/schoolYear";
+import { getActiveSchoolYear } from "@/lib/schoolYear";
 
 export default async function DashboardHome() {
   const supabase = await createClient();
@@ -11,7 +11,7 @@ export default async function DashboardHome() {
     return <CompleteProfilePrompt />;
   }
 
-  const schoolYear = getCurrentSchoolYear();
+  const schoolYear = await getActiveSchoolYear(supabase);
 
   const { count: ownMembersCount } = await supabase
     .from("family_members")
@@ -68,17 +68,43 @@ export default async function DashboardHome() {
       </div>
 
       {profile.role === "super_admin" && (
-        <div className="card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-gold-500/40">
-          <div>
-            <h2 className="font-bold text-brand-900">لوحة المشرف العام</h2>
-            <p className="text-sm text-brand-700/70 mt-1">
-              اطّلع على ترتيب كل الأبناء حسب المستوى الدراسي لتحضير التكريم.
-            </p>
+        <>
+          <div className="card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-gold-500/40">
+            <div>
+              <h2 className="font-bold text-brand-900">لوحة المشرف العام</h2>
+              <p className="text-sm text-brand-700/70 mt-1">
+                اطّلع على ترتيب كل الأبناء حسب المستوى الدراسي لتحضير التكريم.
+              </p>
+            </div>
+            <Link href="/dashboard/admin/ranking" className="btn-secondary shrink-0">
+              فتح لوحة الترتيب
+            </Link>
           </div>
-          <Link href="/dashboard/admin/ranking" className="btn-secondary shrink-0">
-            فتح لوحة الترتيب
-          </Link>
-        </div>
+
+          <div className="card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-bold text-brand-900">إعدادات الموقع</h2>
+              <p className="text-sm text-brand-700/70 mt-1">
+                شعار الجمعية، اسم الجمعية، وإدارة السنوات الدراسية.
+              </p>
+            </div>
+            <Link href="/dashboard/admin/settings" className="btn-secondary shrink-0">
+              فتح الإعدادات
+            </Link>
+          </div>
+
+          <div className="card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-bold text-brand-900">شهادات التكريم</h2>
+              <p className="text-sm text-brand-700/70 mt-1">
+                صمّم قوالب شهادات التكريم واطبعها لكل طالب.
+              </p>
+            </div>
+            <Link href="/dashboard/admin/certificates" className="btn-secondary shrink-0">
+              فتح محرر الشهادات
+            </Link>
+          </div>
+        </>
       )}
     </div>
   );

@@ -1,14 +1,47 @@
-// السنة الدراسية في الجزائر تبدأ في سبتمبر. قبل سبتمبر نعتبر أننا لا زلنا
-// في السنة الدراسية التي بدأت في سبتمبر الماضي.
-export function getCurrentSchoolYear(date = new Date()) {
+export const TRIMESTER_LABELS = {
+  1: "الفصل الأول",
+  2: "الفصل الثاني",
+  3: "الفصل الثالث",
+};
+
+// دالة احتياطية فقط (تُستعمل إن لم يوجد أي صف بعد في جدول school_years،
+// مثلاً قبل تنفيذ migration_002). السنة الدراسية في الجزائر تبدأ في سبتمبر.
+function computeDefaultSchoolYear(date = new Date()) {
   const year = date.getFullYear();
   const month = date.getMonth() + 1; // 1-12
   const startYear = month >= 9 ? year : year - 1;
   return `${startYear}-${startYear + 1}`;
 }
 
-export const TRIMESTER_LABELS = {
-  1: "الفصل الأول",
-  2: "الفصل الثاني",
-  3: "الفصل الثالث",
-};
+// يرجع كل السنوات الدراسية المخزّنة (الأحدث أولاً) مع علامة السنة النشطة
+export async function getAllSchoolYears(supabase) {
+  const { data } = await supabase
+    .from("school_years")
+    .select("label, is_active, created_at")
+    .order("label", { ascending: false });
+  return data || [];
+}
+
+// يرجع تسمية السنة النشطة حالياً من قاعدة البيانات
+export async function getActiveSchoolYear(supabase) {
+  const { data } = await supabase
+    .from("school_years")
+    .select("label")
+    .eq("is_active", true)
+    .maybeSingle();
+  return data?.label || computeDefaultSchoolYear();
+}
+
+// يحدد السنة الدراسية المطلوب عرضها في صفحة معيّنة: يعتمد على ?year= في
+// الرابط إن كانت قيمة صالحة موجودة في الأرشيف، وإلا يرجع السنة النشطة.
+// يُستعمل هذا في كل صفحة تدعم التنقل بين سنوات الأرشيف (YearSwitcher).
+export async function resolveSchoolYear(supabase, requestedYear) {
+  const years = await getAllSchoolYears(supabase);
+
+  if (requestedYear && years.some((y) => y.label === requestedYear)) {
+    return { schoolYear: requestedYear, years };
+  }
+
+  const active = years.find((y) => y.is_active) || years[0];
+  return { schoolYear: active?.label || computeDefaultSchoolYear(), years };
+}

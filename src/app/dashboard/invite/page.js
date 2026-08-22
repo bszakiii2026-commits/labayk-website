@@ -1,5 +1,6 @@
 import { getCurrentProfile } from "@/lib/profile";
 import InviteLinkBox from "./InviteLinkBox";
+import BackButton from "@/components/BackButton";
 
 export default async function InvitePage() {
   const profile = await getCurrentProfile();
@@ -7,6 +8,7 @@ export default async function InvitePage() {
 
   return (
     <div className="space-y-4 max-w-xl">
+      <BackButton href="/dashboard" />
       <div>
         <h1 className="text-2xl font-bold text-brand-900">دعوة مشرف فرعي</h1>
         <p className="text-brand-700/80 mt-1">

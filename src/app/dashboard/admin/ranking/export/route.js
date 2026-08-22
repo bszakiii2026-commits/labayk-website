@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/profile";
-import { getCurrentSchoolYear } from "@/lib/schoolYear";
+import { resolveSchoolYear } from "@/lib/schoolYear";
 
 function csvEscape(value) {
   const str = String(value ?? "");
@@ -9,14 +9,15 @@ function csvEscape(value) {
   return str;
 }
 
-export async function GET() {
+export async function GET(request) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "super_admin") {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   const supabase = await createClient();
-  const schoolYear = getCurrentSchoolYear();
+  const requestedYear = new URL(request.url).searchParams.get("year");
+  const { schoolYear } = await resolveSchoolYear(supabase, requestedYear);
 
   const { data: members } = await supabase
     .from("family_members")

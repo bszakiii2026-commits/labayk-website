@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/profile";
-import { getCurrentSchoolYear, TRIMESTER_LABELS } from "@/lib/schoolYear";
+import { resolveSchoolYear, TRIMESTER_LABELS } from "@/lib/schoolYear";
 import DeleteMemberButton from "./DeleteMemberButton";
+import YearSwitcher from "@/components/YearSwitcher";
+import BackButton from "@/components/BackButton";
 
-export default async function MemberPage({ params }) {
+export default async function MemberPage({ params, searchParams }) {
   const { memberId } = await params;
+  const { year } = (await searchParams) || {};
   const supabase = await createClient();
   const profile = await getCurrentProfile();
 
@@ -19,7 +22,7 @@ export default async function MemberPage({ params }) {
   if (!member) notFound();
 
   const canManage = member.owner_id === profile?.id;
-  const schoolYear = getCurrentSchoolYear();
+  const { schoolYear, years } = await resolveSchoolYear(supabase, year);
 
   const { data: reports } = await supabase
     .from("report_cards")
@@ -41,24 +44,26 @@ export default async function MemberPage({ params }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <BackButton href="/dashboard/family" label="عودة إلى عائلتي" />
+
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <Link href="/dashboard/family" className="text-sm text-brand-600 hover:underline">
-            ← عودة إلى عائلتي
-          </Link>
-          <h1 className="text-2xl font-bold text-brand-900 mt-2">
+          <h1 className="text-2xl font-bold text-brand-900">
             {member.full_name}
           </h1>
           <p className="text-brand-700/80">
             {member.relation} · {member.grade_level || "بدون مستوى دراسي"}
           </p>
         </div>
-        {canManage && <DeleteMemberButton memberId={member.id} />}
+        <div className="flex items-center gap-3">
+          <YearSwitcher years={years} currentYear={schoolYear} />
+          {canManage && <DeleteMemberButton memberId={member.id} />}
+        </div>
       </div>
 
       {annualAverage && (
         <div className="card inline-flex items-center gap-3 bg-brand-50">
-          <span className="text-sm text-brand-700/70">المعدل السنوي الحالي</span>
+          <span className="text-sm text-brand-700/70">المعدل السنوي ({schoolYear})</span>
           <span className="text-xl font-bold text-brand-900">{annualAverage}</span>
         </div>
       )}
@@ -81,7 +86,7 @@ export default async function MemberPage({ params }) {
               </p>
               {canManage ? (
                 <Link
-                  href={`/dashboard/family/${member.id}/report/${trimester}`}
+                  href={`/dashboard/family/${member.id}/report/${trimester}?year=${encodeURIComponent(schoolYear)}`}
                   className="btn-secondary mt-4 w-full"
                 >
                   {report ? "تعديل الكشف" : "رفع كشف النقاط"}
@@ -89,7 +94,7 @@ export default async function MemberPage({ params }) {
               ) : (
                 report && (
                   <Link
-                    href={`/dashboard/family/${member.id}/report/${trimester}`}
+                    href={`/dashboard/family/${member.id}/report/${trimester}?year=${encodeURIComponent(schoolYear)}`}
                     className="btn-secondary mt-4 w-full"
                   >
                     عرض الكشف

@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/profile";
-import { getCurrentSchoolYear } from "@/lib/schoolYear";
+import { resolveSchoolYear } from "@/lib/schoolYear";
 import ScanEditor from "@/components/ScanEditor";
+import BackButton from "@/components/BackButton";
 
-export default async function ReportPage({ params }) {
+export default async function ReportPage({ params, searchParams }) {
   const { memberId, trimester } = await params;
+  const { year } = (await searchParams) || {};
   const trimesterNum = Number(trimester);
   const supabase = await createClient();
   const profile = await getCurrentProfile();
@@ -18,7 +20,7 @@ export default async function ReportPage({ params }) {
 
   if (!member || ![1, 2, 3].includes(trimesterNum)) notFound();
 
-  const schoolYear = getCurrentSchoolYear();
+  const { schoolYear } = await resolveSchoolYear(supabase, year);
   const canManage = member.owner_id === profile?.id;
 
   const { data: report } = await supabase
@@ -38,15 +40,21 @@ export default async function ReportPage({ params }) {
   }
 
   return (
-    <ScanEditor
-      memberId={memberId}
-      memberName={member.full_name}
-      schoolYear={schoolYear}
-      trimester={trimesterNum}
-      canManage={canManage}
-      existingImageUrl={existingImageUrl}
-      existingManualAverage={report?.manual_average ?? null}
-      existingExtractedAverage={report?.extracted_average ?? null}
-    />
+    <div className="space-y-4">
+      <BackButton
+        href={`/dashboard/family/${memberId}?year=${encodeURIComponent(schoolYear)}`}
+        label="عودة إلى الملف"
+      />
+      <ScanEditor
+        memberId={memberId}
+        memberName={member.full_name}
+        schoolYear={schoolYear}
+        trimester={trimesterNum}
+        canManage={canManage}
+        existingImageUrl={existingImageUrl}
+        existingManualAverage={report?.manual_average ?? null}
+        existingExtractedAverage={report?.extracted_average ?? null}
+      />
+    </div>
   );
 }

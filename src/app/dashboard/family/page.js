@@ -1,16 +1,19 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/profile";
 import { getVisibleFamilyMembers } from "@/lib/family";
-import { getCurrentSchoolYear, TRIMESTER_LABELS } from "@/lib/schoolYear";
-import { addFamilyMember, deleteFamilyMember } from "./actions";
+import { resolveSchoolYear } from "@/lib/schoolYear";
+import { addFamilyMember } from "./actions";
+import YearSwitcher from "@/components/YearSwitcher";
+import FamilySearch from "@/components/FamilySearch";
+import BackButton from "@/components/BackButton";
 
-export default async function FamilyPage() {
+export default async function FamilyPage({ searchParams }) {
+  const { year } = (await searchParams) || {};
   const supabase = await createClient();
   const profile = await getCurrentProfile();
   if (!profile) return null;
 
-  const schoolYear = getCurrentSchoolYear();
+  const { schoolYear, years } = await resolveSchoolYear(supabase, year);
   const { members } = await getVisibleFamilyMembers(supabase, profile.id);
 
   const memberIds = members.map((m) => m.id);
@@ -33,11 +36,12 @@ export default async function FamilyPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-brand-900">عائلتي</h1>
-        <p className="text-brand-700/80 mt-1">
-          السنة الدراسية: {schoolYear}
-        </p>
+      <BackButton href="/dashboard" />
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-brand-900">عائلتي</h1>
+        </div>
+        <YearSwitcher years={years} currentYear={schoolYear} />
       </div>
 
       <div className="card">
@@ -77,111 +81,11 @@ export default async function FamilyPage() {
         </form>
       </div>
 
-      <FamilyMembersTable
-        title="أبنائي المباشرون"
-        members={ownMembers}
+      <FamilySearch
+        ownMembers={ownMembers}
+        otherMembers={otherMembers}
         reportsByMember={reportsByMember}
-        canManage
       />
-
-      {otherMembers.length > 0 && (
-        <FamilyMembersTable
-          title="أبناء الأسر الفرعية تحت إشرافي"
-          members={otherMembers}
-          reportsByMember={reportsByMember}
-          canManage={false}
-        />
-      )}
     </div>
-  );
-}
-
-function FamilyMembersTable({ title, members, reportsByMember, canManage }) {
-  if (members.length === 0 && canManage) {
-    return (
-      <div className="card">
-        <h2 className="font-bold text-brand-900 mb-2">{title}</h2>
-        <p className="text-sm text-brand-700/70">لم تُضف أي أسماء بعد.</p>
-      </div>
-    );
-  }
-  if (members.length === 0) return null;
-
-  return (
-    <div className="card overflow-x-auto">
-      <h2 className="font-bold text-brand-900 mb-4">{title}</h2>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-right text-brand-700/70 border-b border-black/5">
-            <th className="pb-2 pr-2">الاسم</th>
-            <th className="pb-2">المستوى الدراسي</th>
-            {!canManage && <th className="pb-2">المشرف</th>}
-            <th className="pb-2">{TRIMESTER_LABELS[1]}</th>
-            <th className="pb-2">{TRIMESTER_LABELS[2]}</th>
-            <th className="pb-2">{TRIMESTER_LABELS[3]}</th>
-            <th className="pb-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {members.map((m) => (
-            <tr key={m.id} className="border-b border-black/5 last:border-0">
-              <td className="py-3 pr-2 font-medium text-brand-900">
-                {m.full_name}
-                <div className="text-xs text-brand-700/60 font-normal">
-                  {m.relation}
-                </div>
-              </td>
-              <td className="py-3">{m.grade_level || "—"}</td>
-              {!canManage && <td className="py-3">{m.owner_name}</td>}
-              {[1, 2, 3].map((t) => (
-                <td key={t} className="py-3">
-                  <StatusBadge report={reportsByMember[m.id]?.[t]} />
-                </td>
-              ))}
-              <td className="py-3 text-left">
-                {canManage ? (
-                  <Link
-                    href={`/dashboard/family/${m.id}`}
-                    className="text-brand-600 font-medium hover:underline"
-                  >
-                    فتح الملف
-                  </Link>
-                ) : (
-                  <Link
-                    href={`/dashboard/family/${m.id}`}
-                    className="text-brand-600 font-medium hover:underline"
-                  >
-                    عرض
-                  </Link>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function StatusBadge({ report }) {
-  const average = report?.manual_average ?? report?.extracted_average;
-  if (average != null) {
-    return (
-      <span className="inline-block rounded-full bg-brand-100 text-brand-800 px-2.5 py-1 text-xs font-medium">
-        {average}
-      </span>
-    );
-  }
-  if (report) {
-    return (
-      <span className="inline-block rounded-full bg-gold-400/20 text-gold-600 px-2.5 py-1 text-xs font-medium">
-        بانتظار المعدل
-      </span>
-    );
-  }
-  return (
-    <span className="inline-block rounded-full bg-black/5 text-brand-700/50 px-2.5 py-1 text-xs">
-      لم يُرفع
-    </span>
   );
 }
