@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/profile";
-import { getSiteSettings } from "@/lib/siteSettings";
+import { getSiteSettings, getSiteTheme } from "@/lib/siteSettings";
 import { getAllSchoolYears } from "@/lib/schoolYear";
 import BackButton from "@/components/BackButton";
 import {
@@ -9,6 +9,8 @@ import {
   uploadLogo,
   addSchoolYear,
   setActiveSchoolYear,
+  updateTheme,
+  resetTheme,
 } from "./actions";
 
 export default async function SettingsPage() {
@@ -17,6 +19,7 @@ export default async function SettingsPage() {
 
   const supabase = await createClient();
   const { associationName, logoUrl } = await getSiteSettings(supabase);
+  const theme = await getSiteTheme(supabase);
   const years = await getAllSchoolYears(supabase);
 
   return (
@@ -62,6 +65,41 @@ export default async function SettingsPage() {
           </div>
           <button type="submit" className="btn-primary shrink-0 self-end">
             حفظ الاسم
+          </button>
+        </form>
+      </div>
+
+      <div className="card space-y-4">
+        <h2 className="font-bold text-brand-900">ألوان الموقع</h2>
+        <p className="text-sm text-brand-700/70">
+          تظهر التغييرات على كل صفحات الموقع مباشرة بعد الحفظ.
+        </p>
+
+        <form action={updateTheme} className="grid sm:grid-cols-2 gap-4">
+          <div className="flex items-center justify-between gap-3">
+            <label className="label mb-0">لون خلفية الصفحة</label>
+            <input type="color" name="bg" defaultValue={theme.bg} className="w-12 h-10 rounded-lg border border-black/10" />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <label className="label mb-0">لون العناوين</label>
+            <input type="color" name="ink" defaultValue={theme.ink} className="w-12 h-10 rounded-lg border border-black/10" />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <label className="label mb-0">اللون الأساسي (الأزرار والروابط)</label>
+            <input type="color" name="primary" defaultValue={theme.primary} className="w-12 h-10 rounded-lg border border-black/10" />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <label className="label mb-0">لون التمييز الثانوي</label>
+            <input type="color" name="accent" defaultValue={theme.accent} className="w-12 h-10 rounded-lg border border-black/10" />
+          </div>
+          <div className="sm:col-span-2 flex items-center gap-3 pt-2 border-t border-black/5">
+            <button type="submit" className="btn-primary">حفظ الألوان</button>
+          </div>
+        </form>
+
+        <form action={resetTheme}>
+          <button type="submit" className="text-sm text-brand-700 underline">
+            استعادة الألوان الافتراضية
           </button>
         </form>
       </div>

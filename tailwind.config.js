@@ -7,23 +7,26 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // القيم الفعلية تُقرأ من متغيرات CSS (انظر globals.css) حتى يمكن
+        // تعديل الألوان الرئيسية حياً من صفحة إعدادات الموقع دون تعديل الكود.
         brand: {
-          50: "#f2f8f2",
-          100: "#dcedde",
-          200: "#b8dabd",
-          300: "#8dc196",
-          400: "#5fa26d",
-          500: "#3f8550",
-          600: "#2f6a3f",
-          700: "#275435",
-          800: "#22432c",
-          900: "#1d3826",
+          50: "var(--brand-50)",
+          100: "var(--brand-100)",
+          200: "var(--brand-200)",
+          300: "var(--brand-300)",
+          400: "var(--brand-400)",
+          500: "var(--brand-500)",
+          600: "var(--brand-600)",
+          700: "var(--brand-700)",
+          800: "var(--brand-800)",
+          900: "var(--brand-900)",
         },
         gold: {
-          400: "#d9b35a",
-          500: "#c69a3c",
-          600: "#a87e2c",
+          400: "var(--gold-400)",
+          500: "var(--gold-500)",
+          600: "var(--gold-600)",
         },
+        page: "var(--page-bg)",
       },
       fontFamily: {
         sans: ["var(--font-tajawal)", "Tahoma", "Arial", "sans-serif"],

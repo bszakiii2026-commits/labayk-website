@@ -81,6 +81,49 @@ export async function addSchoolYear(formData) {
   return { success: true };
 }
 
+export async function updateTheme(formData) {
+  const profile = await requireSuperAdmin();
+  if (!profile) return { error: "غير مصرح." };
+
+  const theme = {
+    bg: formData.get("bg")?.toString() || undefined,
+    ink: formData.get("ink")?.toString() || undefined,
+    primary: formData.get("primary")?.toString() || undefined,
+    accent: formData.get("accent")?.toString() || undefined,
+  };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ theme })
+    .eq("id", true);
+
+  if (error) return { error: "تعذّر حفظ الألوان." };
+
+  revalidatePath("/dashboard/admin/settings");
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function resetTheme() {
+  const profile = await requireSuperAdmin();
+  if (!profile) return { error: "غير مصرح." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ theme: {} })
+    .eq("id", true);
+
+  if (error) return { error: "تعذّر إعادة الضبط." };
+
+  revalidatePath("/dashboard/admin/settings");
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { success: true };
+}
+
 export async function setActiveSchoolYear(formData) {
   const profile = await requireSuperAdmin();
   if (!profile) return { error: "غير مصرح." };

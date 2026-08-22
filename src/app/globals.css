@@ -2,31 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   نظام الألوان: قيم افتراضية دافئة (كريمي + أسود دافئ + كهرماني + مرجاني)،
+   يمكن للمشرف العام تعديل أربعة منها (الخلفية، الأساسي، العناوين، والتمييز)
+   من صفحة الإعدادات؛ يتم حقن القيم المخصّصة كمتغيرات CSS في الصفحة الجذر.
+   ========================================================================== */
+:root {
+  --page-bg: #eae3d3;
+
+  --brand-50: #f7f2e7;
+  --brand-100: #efe6d4;
+  --brand-200: #e3d3ae;
+  --brand-300: #d4ba84;
+  --brand-400: #c6a15e;
+  --brand-500: #b58f3f;
+  --brand-600: #a97a2c; /* اللون الأساسي: أزرار، روابط، تمييز */
+  --brand-700: #6e655a; /* نص ثانوي/باهت */
+  --brand-800: #362f27; /* سطح داكن */
+  --brand-900: #1c1814; /* لون العناوين */
+
+  --gold-400: #f6c9bc;
+  --gold-500: #e2775f; /* لون التمييز الثانوي (مرجاني) */
+  --gold-600: #c15a3f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: #f7f7f5;
-  color: #1f2a24;
+  background-color: var(--page-bg);
+  color: var(--brand-900);
 }
 
 .card {
-  @apply bg-white rounded-2xl shadow-sm border border-black/5 p-5;
+  @apply bg-white rounded-[28px] shadow-sm border border-black/5 p-5;
+}
+
+.card-dark {
+  @apply rounded-[28px] p-5 text-white shadow-sm;
+  background-color: var(--brand-800);
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-white font-medium hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-white font-medium transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed;
+  background-color: var(--brand-900);
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-black/10 px-4 py-2.5 text-brand-800 font-medium hover:bg-brand-50 transition-colors disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-white border border-black/10 px-5 py-2.5 text-brand-800 font-medium hover:bg-brand-50 transition-colors disabled:opacity-50;
 }
 
 .input {
-  @apply w-full rounded-xl border border-black/10 px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 bg-white;
+  @apply w-full rounded-2xl border border-black/10 px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400 bg-white;
 }
 
 .label {
   @apply block text-sm font-medium text-brand-900 mb-1.5;
+}
+
+/* زر أيقونة دائري (القائمة الجانبية) */
+.icon-btn {
+  @apply w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0;
 }

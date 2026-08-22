@@ -13,33 +13,87 @@ export default async function DashboardHome() {
 
   const schoolYear = await getActiveSchoolYear(supabase);
 
-  const { count: ownMembersCount } = await supabase
+  const { data: ownMembersRows } = await supabase
     .from("family_members")
-    .select("id", { count: "exact", head: true })
+    .select("id")
     .eq("owner_id", profile.id);
+  const ownMemberIds = (ownMembersRows || []).map((m) => m.id);
+  const ownMembersCount = ownMemberIds.length;
 
   const { count: subSupervisorsCount } = await supabase
     .from("profiles")
     .select("id", { count: "exact", head: true })
     .eq("parent_supervisor_id", profile.id);
 
+  let uploadedCount = 0;
+  if (ownMemberIds.length) {
+    const { data: reports } = await supabase
+      .from("report_cards")
+      .select("family_member_id")
+      .eq("school_year", schoolYear)
+      .in("family_member_id", ownMemberIds);
+    uploadedCount = new Set((reports || []).map((r) => r.family_member_id)).size;
+  }
+
+  const completionPct = ownMembersCount
+    ? Math.round((uploadedCount / ownMembersCount) * 100)
+    : 0;
+  const ringCircumference = 2 * Math.PI * 34;
+  const ringOffset = ringCircumference * (1 - completionPct / 100);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-brand-900">
-          مرحباً، {profile.full_name}
-        </h1>
-        <p className="text-brand-700/80 mt-1">
-          السنة الدراسية الحالية: <span className="font-medium">{schoolYear}</span>
-        </p>
+      <div className="card-dark relative overflow-hidden">
+        <div
+          className="absolute -top-10 -start-10 w-56 h-56 rounded-full opacity-40 blur-2xl pointer-events-none"
+          style={{ background: "var(--gold-500)" }}
+        />
+        <div
+          className="absolute -bottom-16 -end-6 w-48 h-48 rounded-full opacity-30 blur-2xl pointer-events-none"
+          style={{ background: "var(--brand-600)" }}
+        />
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div>
+            <p className="text-white/60 text-sm">مرحباً بعودتك</p>
+            <h1 className="text-2xl font-bold mt-1">{profile.full_name}</h1>
+            <p className="text-white/70 text-sm mt-2">
+              السنة الدراسية: <span className="font-medium text-white">{schoolYear}</span>
+              {" · "}
+              {profile.role === "super_admin" ? "مشرف عام (لجنة الجمعية)" : "مشرف عائلة"}
+            </p>
+          </div>
+
+          {ownMembersCount > 0 && (
+            <div className="flex items-center gap-4 shrink-0">
+              <svg width="88" height="88" viewBox="0 0 88 88" style={{ transform: "rotate(-90deg)" }}>
+                <circle cx="44" cy="44" r="34" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="8" />
+                <circle
+                  cx="44"
+                  cy="44"
+                  r="34"
+                  fill="none"
+                  stroke="var(--gold-500)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={ringCircumference}
+                  strokeDashoffset={ringOffset}
+                />
+              </svg>
+              <div>
+                <p className="text-2xl font-bold">{completionPct}٪</p>
+                <p className="text-white/60 text-xs mt-1">
+                  {uploadedCount} من {ownMembersCount} رفعوا كشوفهم
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
         <div className="card">
           <p className="text-sm text-brand-700/70">الأبناء تحت إشرافي المباشر</p>
-          <p className="text-3xl font-bold text-brand-900 mt-1">
-            {ownMembersCount || 0}
-          </p>
+          <p className="text-3xl font-bold text-brand-900 mt-1">{ownMembersCount}</p>
         </div>
         <div className="card">
           <p className="text-sm text-brand-700/70">مشرفون فرعيون (أبناء لديهم حساب)</p>
@@ -85,7 +139,7 @@ export default async function DashboardHome() {
             <div>
               <h2 className="font-bold text-brand-900">إعدادات الموقع</h2>
               <p className="text-sm text-brand-700/70 mt-1">
-                شعار الجمعية، اسم الجمعية، وإدارة السنوات الدراسية.
+                شعار الجمعية، اسم الجمعية، ألوان الموقع، وإدارة السنوات الدراسية.
               </p>
             </div>
             <Link href="/dashboard/admin/settings" className="btn-secondary shrink-0">

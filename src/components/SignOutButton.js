@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SignOutButton() {
+export default function SignOutButton({
+  className = "text-sm hover:opacity-70 transition-opacity",
+  children = "تسجيل الخروج",
+}) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -14,8 +17,8 @@ export default function SignOutButton() {
   }
 
   return (
-    <button onClick={handleSignOut} className="hover:text-gold-400">
-      تسجيل الخروج
+    <button onClick={handleSignOut} className={className} title="تسجيل الخروج">
+      {children}
     </button>
   );
 }
