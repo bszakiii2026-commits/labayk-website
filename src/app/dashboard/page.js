@@ -4,26 +4,27 @@ import { getCurrentProfile } from "@/lib/profile";
 import { getActiveSchoolYear } from "@/lib/schoolYear";
 
 export default async function DashboardHome() {
-  const supabase = await createClient();
   const profile = await getCurrentProfile();
 
   if (!profile) {
     return <CompleteProfilePrompt />;
   }
 
-  const schoolYear = await getActiveSchoolYear(supabase);
+  const supabase = await createClient();
 
-  const { data: ownMembersRows } = await supabase
-    .from("family_members")
-    .select("id")
-    .eq("owner_id", profile.id);
-  const ownMemberIds = (ownMembersRows || []).map((m) => m.id);
+  // ثلاثة استعلامات مستقلة عن بعضها، تُنفَّذ بالتوازي بدل التتابع.
+  const [schoolYear, ownMembersRes, subSupervisorsRes] = await Promise.all([
+    getActiveSchoolYear(),
+    supabase.from("family_members").select("id").eq("owner_id", profile.id),
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("parent_supervisor_id", profile.id),
+  ]);
+
+  const ownMemberIds = (ownMembersRes.data || []).map((m) => m.id);
   const ownMembersCount = ownMemberIds.length;
-
-  const { count: subSupervisorsCount } = await supabase
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .eq("parent_supervisor_id", profile.id);
+  const subSupervisorsCount = subSupervisorsRes.count;
 
   let uploadedCount = 0;
   if (ownMemberIds.length) {

@@ -10,17 +10,17 @@ export default async function ReportPage({ params, searchParams }) {
   const { year } = (await searchParams) || {};
   const trimesterNum = Number(trimester);
   const supabase = await createClient();
-  const profile = await getCurrentProfile();
 
-  const { data: member } = await supabase
-    .from("family_members")
-    .select("*")
-    .eq("id", memberId)
-    .maybeSingle();
+  // ثلاثة استعلامات مستقلة عن بعضها، تُنفَّذ بالتوازي بدل التتابع.
+  const [profile, memberRes, { schoolYear }] = await Promise.all([
+    getCurrentProfile(),
+    supabase.from("family_members").select("*").eq("id", memberId).maybeSingle(),
+    resolveSchoolYear(year),
+  ]);
 
+  const member = memberRes.data;
   if (!member || ![1, 2, 3].includes(trimesterNum)) notFound();
 
-  const { schoolYear } = await resolveSchoolYear(supabase, year);
   const canManage = member.owner_id === profile?.id;
 
   const { data: report } = await supabase

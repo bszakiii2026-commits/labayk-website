@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import Image from "next/image";
 import { getCurrentProfile } from "@/lib/profile";
 import { getSiteSettings } from "@/lib/siteSettings";
 import SignOutButton from "@/components/SignOutButton";
@@ -23,10 +23,13 @@ const LOGOUT_ICON = (
 );
 
 export default async function DashboardLayout({ children }) {
-  const supabase = await createClient();
-  const profile = await getCurrentProfile();
+  // الطلبان مستقلان (لا يعتمد أحدهما على الآخر) فيُنفَّذان بالتوازي بدل
+  // التتابع لتقليل زمن الاستجابة.
+  const [profile, { associationName, logoUrl }] = await Promise.all([
+    getCurrentProfile(),
+    getSiteSettings(),
+  ]);
   const isAdmin = profile?.role === "super_admin";
-  const { associationName, logoUrl } = await getSiteSettings(supabase);
 
   const navItems = [
     { href: "/dashboard", icon: "home", label: "الرئيسية" },
@@ -51,8 +54,7 @@ export default async function DashboardLayout({ children }) {
           className="w-11 h-11 rounded-full overflow-hidden bg-white border border-black/5 flex items-center justify-center shadow-sm shrink-0"
         >
           {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt={associationName} className="w-full h-full object-contain" />
+            <Image src={logoUrl} alt={associationName} width={44} height={44} className="w-full h-full object-contain" />
           ) : (
             <span className="text-xs font-bold text-brand-900">لبيك</span>
           )}
@@ -73,8 +75,7 @@ export default async function DashboardLayout({ children }) {
           <Link href="/dashboard" className="flex items-center gap-2 font-bold text-brand-900 min-w-0">
             <span className="w-8 h-8 rounded-full overflow-hidden bg-white border border-black/5 flex items-center justify-center shrink-0">
               {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt={associationName} className="w-full h-full object-contain" />
+                <Image src={logoUrl} alt={associationName} width={32} height={32} className="w-full h-full object-contain" />
               ) : (
                 <span className="text-[10px] font-bold">لبيك</span>
               )}

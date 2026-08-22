@@ -12,19 +12,24 @@ export default async function RankingPage({ searchParams }) {
   if (!profile || profile.role !== "super_admin") redirect("/dashboard");
 
   const supabase = await createClient();
-  const { schoolYear, years } = await resolveSchoolYear(supabase, year);
 
-  const { data: members } = await supabase
-    .from("family_members")
-    .select("id, full_name, grade_level, owner_id")
-    .eq("is_student", true);
+  // الاستعلامات الأربعة التالية مستقلة عن بعضها، فتُنفَّذ بالتوازي بدل
+  // التتابع لتقليل زمن تحميل الصفحة.
+  const [{ schoolYear, years }, membersRes, ownersRes, templatesRes] = await Promise.all([
+    resolveSchoolYear(year),
+    supabase
+      .from("family_members")
+      .select("id, full_name, grade_level, owner_id")
+      .eq("is_student", true),
+    supabase.from("profiles").select("id, full_name"),
+    supabase.from("certificate_templates").select("id", { count: "exact", head: true }),
+  ]);
 
-  const { data: owners } = await supabase.from("profiles").select("id, full_name");
+  const members = membersRes.data;
+  const owners = ownersRes.data;
+  const templatesCount = templatesRes.count;
+
   const ownerNameById = Object.fromEntries((owners || []).map((o) => [o.id, o.full_name]));
-
-  const { count: templatesCount } = await supabase
-    .from("certificate_templates")
-    .select("id", { count: "exact", head: true });
 
   const memberIds = (members || []).map((m) => m.id);
   const { data: reportCards } = memberIds.length

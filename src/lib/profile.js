@@ -1,8 +1,11 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 // Returns the signed-in user's profile row (id, full_name, role,
 // parent_supervisor_id) or null if not signed in / profile not created yet.
-export async function getCurrentProfile() {
+// ملفوفة بـ cache() حتى لا تُعاد نفس الاستعلامات (auth.getUser + profiles)
+// أكثر من مرة عند استدعائها من التخطيط (layout) والصفحة في نفس الطلب.
+export const getCurrentProfile = cache(async function getCurrentProfile() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,4 +20,4 @@ export async function getCurrentProfile() {
     .maybeSingle();
 
   return profile;
-}
+});

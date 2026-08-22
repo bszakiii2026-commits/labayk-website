@@ -1,6 +1,12 @@
+import { cache } from "react";
+import { createClient } from "@/lib/supabase/server";
+
 // يجمع كل حسابات المشرفين الموجودة أسفل حساب معيّن في الهرم (أبناء، أحفاد...)
 // عبر تصفح parent_supervisor_id طبقة بعد طبقة.
-export async function getDescendantSupervisorIds(supabase, rootProfileId) {
+export const getDescendantSupervisorIds = cache(async function getDescendantSupervisorIds(
+  rootProfileId
+) {
+  const supabase = await createClient();
   const ids = [rootProfileId];
   let frontier = [rootProfileId];
 
@@ -17,12 +23,15 @@ export async function getDescendantSupervisorIds(supabase, rootProfileId) {
   }
 
   return ids;
-}
+});
 
 // يرجع كل أفراد العائلة المرئيين لحساب معيّن: أبناؤه المباشرون + كل أبناء
 // الحسابات الفرعية تحته، مع اسم المشرف المسؤول عن كل فرد.
-export async function getVisibleFamilyMembers(supabase, rootProfileId) {
-  const supervisorIds = await getDescendantSupervisorIds(supabase, rootProfileId);
+export const getVisibleFamilyMembers = cache(async function getVisibleFamilyMembers(
+  rootProfileId
+) {
+  const supabase = await createClient();
+  const supervisorIds = await getDescendantSupervisorIds(rootProfileId);
 
   const { data: supervisors } = await supabase
     .from("profiles")
@@ -46,4 +55,4 @@ export async function getVisibleFamilyMembers(supabase, rootProfileId) {
     })),
     error,
   };
-}
+});

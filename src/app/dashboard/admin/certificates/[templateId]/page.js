@@ -12,16 +12,16 @@ export default async function CertificateEditorPage({ params }) {
   if (!profile || profile.role !== "super_admin") redirect("/dashboard");
 
   const supabase = await createClient();
-  const { data: template } = await supabase
-    .from("certificate_templates")
-    .select("*")
-    .eq("id", templateId)
-    .maybeSingle();
 
+  // ثلاثة استعلامات مستقلة عن بعضها، تُنفَّذ بالتوازي بدل التتابع.
+  const [templateRes, { associationName, logoUrl }, schoolYear] = await Promise.all([
+    supabase.from("certificate_templates").select("*").eq("id", templateId).maybeSingle(),
+    getSiteSettings(),
+    getActiveSchoolYear(),
+  ]);
+
+  const template = templateRes.data;
   if (!template) notFound();
-
-  const { associationName, logoUrl } = await getSiteSettings(supabase);
-  const schoolYear = await getActiveSchoolYear(supabase);
 
   let backgroundImageUrl = null;
   if (template.background_image_path) {

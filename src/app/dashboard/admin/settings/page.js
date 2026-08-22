@@ -19,14 +19,19 @@ export default async function SettingsPage() {
   if (!profile || profile.role !== "super_admin") redirect("/dashboard");
 
   const supabase = await createClient();
-  const { associationName, logoUrl } = await getSiteSettings(supabase);
-  const theme = await getSiteTheme(supabase);
-  const years = await getAllSchoolYears(supabase);
 
-  const { data: allProfiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, role, parent_supervisor_id, created_at")
-    .order("full_name", { ascending: true });
+  // أربعة استعلامات مستقلة عن بعضها، تُنفَّذ بالتوازي بدل التتابع.
+  const [{ associationName, logoUrl }, theme, years, allProfilesRes] = await Promise.all([
+    getSiteSettings(),
+    getSiteTheme(),
+    getAllSchoolYears(),
+    supabase
+      .from("profiles")
+      .select("id, full_name, role, parent_supervisor_id, created_at")
+      .order("full_name", { ascending: true }),
+  ]);
+
+  const allProfiles = allProfilesRes.data;
 
   const orphanedSupervisors = (allProfiles || []).filter(
     (p) => p.role === "supervisor" && !p.parent_supervisor_id

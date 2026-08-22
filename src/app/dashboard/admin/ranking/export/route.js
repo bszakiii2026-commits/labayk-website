@@ -17,15 +17,19 @@ export async function GET(request) {
 
   const supabase = await createClient();
   const requestedYear = new URL(request.url).searchParams.get("year");
-  const { schoolYear } = await resolveSchoolYear(supabase, requestedYear);
 
-  const { data: members } = await supabase
-    .from("family_members")
-    .select("id, full_name, grade_level, owner_id")
-    .eq("is_student", true);
+  // ثلاثة استعلامات مستقلة عن بعضها، تُنفَّذ بالتوازي بدل التتابع.
+  const [{ schoolYear }, membersRes, ownersRes] = await Promise.all([
+    resolveSchoolYear(requestedYear),
+    supabase
+      .from("family_members")
+      .select("id, full_name, grade_level, owner_id")
+      .eq("is_student", true),
+    supabase.from("profiles").select("id, full_name"),
+  ]);
 
-  const { data: owners } = await supabase.from("profiles").select("id, full_name");
-  const ownerNameById = Object.fromEntries((owners || []).map((o) => [o.id, o.full_name]));
+  const members = membersRes.data;
+  const ownerNameById = Object.fromEntries((ownersRes.data || []).map((o) => [o.id, o.full_name]));
 
   const memberIds = (members || []).map((m) => m.id);
   const { data: reportCards } = memberIds.length

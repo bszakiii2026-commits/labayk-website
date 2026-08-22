@@ -9,13 +9,16 @@ import BackButton from "@/components/BackButton";
 
 export default async function FamilyPage({ searchParams }) {
   const { year } = (await searchParams) || {};
-  const supabase = await createClient();
   const profile = await getCurrentProfile();
   if (!profile) return null;
 
-  const { schoolYear, years } = await resolveSchoolYear(supabase, year);
-  const { members } = await getVisibleFamilyMembers(supabase, profile.id);
+  // مستقلان عن بعضهما (لا حاجة لانتظار أحدهما قبل الآخر)، فيُنفَّذان بالتوازي.
+  const [{ schoolYear, years }, { members }] = await Promise.all([
+    resolveSchoolYear(year),
+    getVisibleFamilyMembers(profile.id),
+  ]);
 
+  const supabase = await createClient();
   const memberIds = members.map((m) => m.id);
   const { data: reportCards } = memberIds.length
     ? await supabase
@@ -36,7 +39,6 @@ export default async function FamilyPage({ searchParams }) {
 
   return (
     <div className="space-y-8">
-      <BackButton href="/dashboard" />
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-brand-900">عائلتي</h1>

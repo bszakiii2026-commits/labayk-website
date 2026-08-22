@@ -1,3 +1,6 @@
+import { cache } from "react";
+import { createClient } from "@/lib/supabase/server";
+
 export const TRIMESTER_LABELS = {
   1: "الفصل الأول",
   2: "الفصل الثاني",
@@ -13,30 +16,33 @@ function computeDefaultSchoolYear(date = new Date()) {
   return `${startYear}-${startYear + 1}`;
 }
 
-// يرجع كل السنوات الدراسية المخزّنة (الأحدث أولاً) مع علامة السنة النشطة
-export async function getAllSchoolYears(supabase) {
+// يرجع كل السنوات الدراسية المخزّنة (الأحدث أولاً) مع علامة السنة النشطة.
+// ملفوفة بـ cache() لتفادي تكرار نفس الاستعلام أكثر من مرة في نفس الطلب.
+export const getAllSchoolYears = cache(async function getAllSchoolYears() {
+  const supabase = await createClient();
   const { data } = await supabase
     .from("school_years")
     .select("label, is_active, created_at")
     .order("label", { ascending: false });
   return data || [];
-}
+});
 
 // يرجع تسمية السنة النشطة حالياً من قاعدة البيانات
-export async function getActiveSchoolYear(supabase) {
+export const getActiveSchoolYear = cache(async function getActiveSchoolYear() {
+  const supabase = await createClient();
   const { data } = await supabase
     .from("school_years")
     .select("label")
     .eq("is_active", true)
     .maybeSingle();
   return data?.label || computeDefaultSchoolYear();
-}
+});
 
 // يحدد السنة الدراسية المطلوب عرضها في صفحة معيّنة: يعتمد على ?year= في
 // الرابط إن كانت قيمة صالحة موجودة في الأرشيف، وإلا يرجع السنة النشطة.
 // يُستعمل هذا في كل صفحة تدعم التنقل بين سنوات الأرشيف (YearSwitcher).
-export async function resolveSchoolYear(supabase, requestedYear) {
-  const years = await getAllSchoolYears(supabase);
+export const resolveSchoolYear = cache(async function resolveSchoolYear(requestedYear) {
+  const years = await getAllSchoolYears();
 
   if (requestedYear && years.some((y) => y.label === requestedYear)) {
     return { schoolYear: requestedYear, years };
@@ -44,4 +50,4 @@ export async function resolveSchoolYear(supabase, requestedYear) {
 
   const active = years.find((y) => y.is_active) || years[0];
   return { schoolYear: active?.label || computeDefaultSchoolYear(), years };
-}
+});

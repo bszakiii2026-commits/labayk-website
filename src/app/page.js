@@ -1,26 +1,32 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteSettings } from "@/lib/siteSettings";
 
 export default async function Home() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  // مستقلان عن بعضهما، فيُنفَّذان بالتوازي بدل التتابع.
+  const [
+    {
+      data: { user },
+    },
+    { associationName, logoUrl },
+  ] = await Promise.all([supabase.auth.getUser(), getSiteSettings()]);
 
   if (user) redirect("/dashboard");
-
-  const { associationName, logoUrl } = await getSiteSettings(supabase);
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center space-y-6">
         {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={logoUrl}
             alt={associationName}
+            width={64}
+            height={64}
+            priority
             className="mx-auto w-16 h-16 rounded-2xl object-contain bg-brand-50 border border-black/5"
           />
         ) : (

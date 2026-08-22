@@ -16,14 +16,19 @@ export default async function CertificatePrintPage({ params, searchParams }) {
 
   const supabase = await createClient();
 
-  const { data: member } = await supabase
-    .from("family_members")
-    .select("id, full_name, grade_level")
-    .eq("id", memberId)
-    .maybeSingle();
-  if (!member) notFound();
+  // أربعة استعلامات مستقلة عن بعضها، تُنفَّذ بالتوازي بدل التتابع.
+  const [memberRes, { schoolYear }, templatesRes, { associationName, logoUrl }] = await Promise.all([
+    supabase.from("family_members").select("id, full_name, grade_level").eq("id", memberId).maybeSingle(),
+    resolveSchoolYear(year),
+    supabase
+      .from("certificate_templates")
+      .select("id, name, orientation, background_color, background_image_path, elements, updated_at")
+      .order("updated_at", { ascending: false }),
+    getSiteSettings(),
+  ]);
 
-  const { schoolYear } = await resolveSchoolYear(supabase, year);
+  const member = memberRes.data;
+  if (!member) notFound();
 
   const { data: reports } = await supabase
     .from("report_cards")
@@ -39,10 +44,7 @@ export default async function CertificatePrintPage({ params, searchParams }) {
     ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2)
     : "—";
 
-  const { data: templates } = await supabase
-    .from("certificate_templates")
-    .select("id, name, orientation, background_color, background_image_path, elements, updated_at")
-    .order("updated_at", { ascending: false });
+  const templates = templatesRes.data;
 
   if (!templates || templates.length === 0) {
     return (
@@ -62,7 +64,6 @@ export default async function CertificatePrintPage({ params, searchParams }) {
   }
 
   const activeTemplate = templates.find((t) => t.id === templateId) || templates[0];
-  const { associationName, logoUrl } = await getSiteSettings(supabase);
 
   let backgroundImageUrl = null;
   if (activeTemplate.background_image_path) {

@@ -11,18 +11,19 @@ export default async function MemberPage({ params, searchParams }) {
   const { memberId } = await params;
   const { year } = (await searchParams) || {};
   const supabase = await createClient();
-  const profile = await getCurrentProfile();
 
-  const { data: member } = await supabase
-    .from("family_members")
-    .select("*")
-    .eq("id", memberId)
-    .maybeSingle();
+  // ثلاثة استعلامات مستقلة عن بعضها (الملف الشخصي، الفرد، السنة الدراسية)
+  // تُنفَّذ بالتوازي بدل التتابع.
+  const [profile, memberRes, { schoolYear, years }] = await Promise.all([
+    getCurrentProfile(),
+    supabase.from("family_members").select("*").eq("id", memberId).maybeSingle(),
+    resolveSchoolYear(year),
+  ]);
 
+  const member = memberRes.data;
   if (!member) notFound();
 
   const canManage = member.owner_id === profile?.id;
-  const { schoolYear, years } = await resolveSchoolYear(supabase, year);
 
   const { data: reports } = await supabase
     .from("report_cards")

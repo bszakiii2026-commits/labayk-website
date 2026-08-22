@@ -1,5 +1,4 @@
 import { Tajawal } from "next/font/google";
-import { createClient } from "@/lib/supabase/server";
 import { getSiteTheme } from "@/lib/siteSettings";
 import "./globals.css";
 
@@ -16,8 +15,7 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  const supabase = await createClient();
-  const theme = await getSiteTheme(supabase);
+  const theme = await getSiteTheme();
 
   // تخصيص ألوان الموقع الرئيسية (إن عدّلها المشرف العام من صفحة الإعدادات)
   // عبر متغيرات CSS، فوق القيم الافتراضية المضمّنة في globals.css.
