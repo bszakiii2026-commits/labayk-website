@@ -8,6 +8,9 @@ import CertificateRender from "@/components/CertificateRender";
 import BackButton from "@/components/BackButton";
 import TemplatePicker from "./TemplatePicker";
 
+// صفحة الطباعة خارج تخطيط لوحة التحكم (/dashboard) عمداً — حتى لا يظهر
+// الشريط الجانبي/السفلي داخل نتيجة الطباعة أو حفظ PDF (كانت المشكلة أن
+// أي صفحة تحت /dashboard ترث تلقائياً شريط التنقل من dashboard/layout.js).
 export default async function CertificatePrintPage({ params, searchParams }) {
   const { memberId } = await params;
   const { year, rank, template: templateId } = (await searchParams) || {};
@@ -49,7 +52,7 @@ export default async function CertificatePrintPage({ params, searchParams }) {
 
   if (!templates || templates.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
         <BackButton href="/dashboard/admin/ranking" />
         <div className="card">
           <p className="text-brand-700/70">
@@ -86,8 +89,10 @@ export default async function CertificatePrintPage({ params, searchParams }) {
     association_name: associationName,
   };
 
+  const renderTemplate = { ...activeTemplate, elements: elementsWithSrc };
+
   return (
-    <div className="space-y-4">
+    <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
       <div className="print:hidden space-y-4">
         <BackButton href="/dashboard/admin/ranking" />
         <TemplatePicker
@@ -96,11 +101,14 @@ export default async function CertificatePrintPage({ params, searchParams }) {
           memberId={memberId}
           year={schoolYear}
           rank={rank}
+          template={renderTemplate}
+          backgroundImageUrl={backgroundImageUrl}
+          data={data}
         />
       </div>
 
       <CertificateRender
-        template={{ ...activeTemplate, elements: elementsWithSrc }}
+        template={renderTemplate}
         backgroundImageUrl={backgroundImageUrl}
         data={data}
       />

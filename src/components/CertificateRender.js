@@ -10,7 +10,13 @@ export default function CertificateRender({ template, backgroundImageUrl, data }
       <style>{`
         @media print {
           @page { size: A4 ${orientation}; margin: 0; }
-          body { margin: 0; }
+          html, body { margin: 0; }
+          .cert-print-canvas,
+          .cert-print-canvas * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
           .cert-print-canvas {
             width: 100vw !important;
             height: 100vh !important;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import CertificatePrintBar from "@/components/CertificatePrintBar";
 
 // نفس فكرة TemplatePicker المستعملة لشهادات الطلاب المسجّلين، لكن هذه
 // النسخة تحافظ على كل الحقول اليدوية (الاسم، المستوى، المعدل...) في
@@ -14,6 +15,9 @@ export default function ManualTemplatePicker({
   rank,
   year,
   date,
+  template,
+  backgroundImageUrl,
+  data,
 }) {
   const router = useRouter();
 
@@ -26,11 +30,11 @@ export default function ManualTemplatePicker({
     if (rank) params.set("rank", rank);
     if (year) params.set("year", year);
     if (date) params.set("date", date);
-    return `/dashboard/admin/certificates/print/manual?${params.toString()}`;
+    return `/print/certificate/manual?${params.toString()}`;
   }
 
   return (
-    <div className="card flex flex-wrap items-center justify-between gap-3">
+    <CertificatePrintBar template={template} backgroundImageUrl={backgroundImageUrl} data={data}>
       <label className="inline-flex items-center gap-2 text-sm">
         القالب:
         <select
@@ -45,9 +49,6 @@ export default function ManualTemplatePicker({
           ))}
         </select>
       </label>
-      <button type="button" onClick={() => window.print()} className="btn-primary">
-        🖨 طباعة / حفظ PDF
-      </button>
-    </div>
+    </CertificatePrintBar>
   );
 }

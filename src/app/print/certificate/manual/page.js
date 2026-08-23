@@ -10,6 +10,7 @@ import ManualTemplatePicker from "./ManualTemplatePicker";
 // طباعة شهادة ببيانات يدوية (بدون أي ربط بجدول family_members أو
 // report_cards) — البيانات كلها تأتي من رابط الصفحة نفسه (searchParams)
 // كما أدخلها المشرف العام في نموذج /dashboard/admin/certificates/manual.
+// الصفحة خارج تخطيط /dashboard عمداً — نفس سبب صفحة طباعة شهادة الطالب.
 export default async function ManualCertificatePrintPage({ searchParams }) {
   const { name, grade, average, rank, year, date, template: templateId } =
     (await searchParams) || {};
@@ -62,8 +63,10 @@ export default async function ManualCertificatePrintPage({ searchParams }) {
     association_name: associationName,
   };
 
+  const renderTemplate = { ...activeTemplate, elements: elementsWithSrc };
+
   return (
-    <div className="space-y-4">
+    <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
       <div className="print:hidden space-y-4">
         <BackButton
           href="/dashboard/admin/certificates/manual"
@@ -78,11 +81,14 @@ export default async function ManualCertificatePrintPage({ searchParams }) {
           rank={rank}
           year={year}
           date={date}
+          template={renderTemplate}
+          backgroundImageUrl={backgroundImageUrl}
+          data={data}
         />
       </div>
 
       <CertificateRender
-        template={{ ...activeTemplate, elements: elementsWithSrc }}
+        template={renderTemplate}
         backgroundImageUrl={backgroundImageUrl}
         data={data}
       />

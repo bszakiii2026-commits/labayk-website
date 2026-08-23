@@ -1,8 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import CertificatePrintBar from "@/components/CertificatePrintBar";
 
-export default function TemplatePicker({ templates, currentTemplateId, memberId, year, rank }) {
+export default function TemplatePicker({
+  templates,
+  currentTemplateId,
+  memberId,
+  year,
+  rank,
+  template,
+  backgroundImageUrl,
+  data,
+}) {
   const router = useRouter();
 
   function buildUrl(templateId) {
@@ -10,11 +20,11 @@ export default function TemplatePicker({ templates, currentTemplateId, memberId,
     params.set("template", templateId);
     if (year) params.set("year", year);
     if (rank) params.set("rank", rank);
-    return `/dashboard/admin/certificates/print/${memberId}?${params.toString()}`;
+    return `/print/certificate/${memberId}?${params.toString()}`;
   }
 
   return (
-    <div className="card flex flex-wrap items-center justify-between gap-3">
+    <CertificatePrintBar template={template} backgroundImageUrl={backgroundImageUrl} data={data}>
       <label className="inline-flex items-center gap-2 text-sm">
         القالب:
         <select
@@ -29,9 +39,6 @@ export default function TemplatePicker({ templates, currentTemplateId, memberId,
           ))}
         </select>
       </label>
-      <button type="button" onClick={() => window.print()} className="btn-primary">
-        🖨 طباعة / حفظ PDF
-      </button>
-    </div>
+    </CertificatePrintBar>
   );
 }

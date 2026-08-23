@@ -52,7 +52,7 @@ export default async function ManualCertificatePage() {
         </div>
       ) : (
         <form
-          action="/dashboard/admin/certificates/print/manual"
+          action="/print/certificate/manual"
           method="GET"
           className="card space-y-4"
         >

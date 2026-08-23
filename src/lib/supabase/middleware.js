@@ -32,7 +32,9 @@ export async function updateSession(request) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isProtected = path.startsWith("/dashboard");
+  // صفحات طباعة الشهادات خارج /dashboard عمداً (لتفادي ظهور شريط التنقل
+  // في نتيجة الطباعة)، لكنها تبقى محمية بنفس طريقة /dashboard.
+  const isProtected = path.startsWith("/dashboard") || path.startsWith("/print");
   const isAuthPage = path === "/login" || path === "/signup";
 
   if (!user && isProtected) {

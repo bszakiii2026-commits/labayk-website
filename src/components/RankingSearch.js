@@ -75,7 +75,7 @@ export default function RankingSearch({ groups, schoolYear, hasTemplates }) {
                   {hasTemplates && (
                     <td className="py-3 text-left">
                       <Link
-                        href={`/dashboard/admin/certificates/print/${row.id}?year=${encodeURIComponent(
+                        href={`/print/certificate/${row.id}?year=${encodeURIComponent(
                           schoolYear
                         )}&rank=${i + 1}`}
                         className="text-brand-600 font-medium hover:underline"
