@@ -1,4 +1,8 @@
-import { fillCertificateText, resolveCertificateFontFamily } from "@/lib/certificateVariables";
+import {
+  fillCertificateTextWithFormats,
+  splitTextByFormats,
+  resolveCertificateFontFamily,
+} from "@/lib/certificateVariables";
 
 // عرض شهادة جاهزة للطباعة (بدون تفاعل تعديل)، تُستعمل في صفحة الطباعة لكل
 // طالب. template.elements يجب أن تحتوي resolvedSrc جاهزاً لأي عنصر صورة.
@@ -70,7 +74,28 @@ export default function CertificateRender({ template, backgroundImageUrl, data }
                   margin: 0,
                 }}
               >
-                {fillCertificateText(el.text, data)}
+                {(() => {
+                  const { text: filled, formats } = fillCertificateTextWithFormats(
+                    el.text,
+                    data,
+                    el.formats
+                  );
+                  return splitTextByFormats(filled, formats).map((seg, i) =>
+                    seg.bold !== undefined || (seg.size && seg.size !== 1) ? (
+                      <span
+                        key={i}
+                        style={{
+                          fontWeight: seg.bold === true ? "bold" : seg.bold === false ? "normal" : undefined,
+                          fontSize: seg.size && seg.size !== 1 ? `${seg.size}em` : undefined,
+                        }}
+                      >
+                        {seg.text}
+                      </span>
+                    ) : (
+                      seg.text
+                    )
+                  );
+                })()}
               </p>
             ) : el.resolvedSrc ? (
               // eslint-disable-next-line @next/next/no-img-element

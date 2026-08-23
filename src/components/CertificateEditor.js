@@ -6,7 +6,9 @@ import {
   CERTIFICATE_PLACEHOLDERS,
   CERTIFICATE_FONTS,
   SAMPLE_CERTIFICATE_DATA,
-  fillCertificateText,
+  fillCertificateTextWithFormats,
+  splitTextByFormats,
+  shiftFormatsOnTextChange,
   resolveCertificateFontFamily,
   resolveCertificateAssetUrl,
 } from "@/lib/certificateVariables";
@@ -310,6 +312,68 @@ export default function CertificateEditor({
     updateElement(selectedElement.id, { text: newText });
   }
 
+  // ---------- تنسيق جزئي (سماكة/حجم) لكلمة أو جملة محدَّدة داخل النص ----------
+  // يقرأ التحديد الحالي من الـ textarea (نفس آلية إدراج المتغيّر أعلاه)،
+  // ويطبّق عليه تعديلاً (patchFn) يُرجع {bold, size} الجديدة لهذا النطاق، أو
+  // null لإزالة أي تنسيق خاص عن النطاق المحدَّد.
+  function applySelectionFormat(patchFn) {
+    if (!selectedElement) return;
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart ?? 0;
+    const end = textarea?.selectionEnd ?? 0;
+    if (start === end) {
+      setStatus("حدد كلمة أو جملة من النص أولاً (بالسحب على النص في الصندوق) قبل تنسيقها.");
+      return;
+    }
+    const text = selectedElement.text || "";
+    // تجنّب تحديد يقطع منتصف متغيّر ديناميكي مثل {{name}} — يجب تضمينه
+    // كاملاً أو تركه خارج التحديد بالكامل.
+    for (const p of CERTIFICATE_PLACEHOLDERS) {
+      let idx = text.indexOf(p.key);
+      while (idx !== -1) {
+        const pStart = idx;
+        const pEnd = idx + p.key.length;
+        const cutsThrough = (start > pStart && start < pEnd) || (end > pStart && end < pEnd);
+        if (cutsThrough) {
+          setStatus(`لا يمكن تنسيق جزء من متغيّر مثل ${p.key} فقط — حدد المتغيّر كاملاً أو تجنّبه.`);
+          return;
+        }
+        idx = text.indexOf(p.key, idx + 1);
+      }
+    }
+
+    const existing = selectedElement.formats || [];
+    const nonOverlapping = existing.filter((f) => f.end <= start || f.start >= end);
+    const covering = existing.find((f) => f.start <= start && f.end >= end);
+    const patch = patchFn(covering);
+    const isEmpty = !patch || (patch.bold === undefined && (!patch.size || patch.size === 1));
+    const merged = isEmpty ? nonOverlapping : [...nonOverlapping, { start, end, ...patch }];
+    updateElement(selectedElement.id, { formats: merged });
+    setStatus("");
+  }
+
+  function toggleSelectionBold() {
+    applySelectionFormat((covering) => ({
+      bold: covering?.bold === true ? false : true,
+      size: covering?.size,
+    }));
+  }
+
+  function resetSelectionBold() {
+    applySelectionFormat((covering) => ({ bold: undefined, size: covering?.size }));
+  }
+
+  function resizeSelection(delta) {
+    applySelectionFormat((covering) => ({
+      bold: covering?.bold,
+      size: clamp((covering?.size || 1) + delta, 0.5, 3),
+    }));
+  }
+
+  function clearSelectionFormat() {
+    applySelectionFormat(() => null);
+  }
+
   function elementImageSrc(el) {
     if (el.imagePath === "__LOGO__") return associationLogoUrl;
     return resolveCertificateAssetUrl(supabase, el.imagePath);
@@ -484,7 +548,28 @@ export default function CertificateEditor({
                         margin: 0,
                       }}
                     >
-                      {fillCertificateText(el.text, sampleData)}
+                      {(() => {
+                        const { text: filled, formats } = fillCertificateTextWithFormats(
+                          el.text,
+                          sampleData,
+                          el.formats
+                        );
+                        return splitTextByFormats(filled, formats).map((seg, i) =>
+                          seg.bold !== undefined || (seg.size && seg.size !== 1) ? (
+                            <span
+                              key={i}
+                              style={{
+                                fontWeight: seg.bold === true ? "bold" : seg.bold === false ? "normal" : undefined,
+                                fontSize: seg.size && seg.size !== 1 ? `${seg.size}em` : undefined,
+                              }}
+                            >
+                              {seg.text}
+                            </span>
+                          ) : (
+                            seg.text
+                          )
+                        );
+                      })()}
                     </p>
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -598,7 +683,15 @@ export default function CertificateEditor({
                 <textarea
                   ref={textareaRef}
                   value={selectedElement.text}
-                  onChange={(e) => updateElement(selectedElement.id, { text: e.target.value })}
+                  onChange={(e) => {
+                    const newText = e.target.value;
+                    const newFormats = shiftFormatsOnTextChange(
+                      selectedElement.text,
+                      newText,
+                      selectedElement.formats
+                    );
+                    updateElement(selectedElement.id, { text: newText, formats: newFormats });
+                  }}
                   rows={4}
                   className="input"
                 />
@@ -616,6 +709,50 @@ export default function CertificateEditor({
                       {p.label}
                     </button>
                   ))}
+                </div>
+              </div>
+              <div>
+                <p className="label mb-1.5">تنسيق جزء من النص (كلمة أو جملة)</p>
+                <p className="text-xs text-brand-700/60 mb-1.5">
+                  حدد كلمة أو جملة بالسحب داخل صندوق النص أعلاه، ثم اضغط أحد
+                  الأزرار.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={toggleSelectionBold}
+                    className="text-xs bg-brand-50 border border-brand-200 rounded-lg px-2 py-1 hover:bg-brand-100 font-bold"
+                  >
+                    غامق للتحديد
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetSelectionBold}
+                    className="text-xs bg-brand-50 border border-brand-200 rounded-lg px-2 py-1 hover:bg-brand-100"
+                  >
+                    عادي للتحديد
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => resizeSelection(0.15)}
+                    className="text-xs bg-brand-50 border border-brand-200 rounded-lg px-2 py-1 hover:bg-brand-100"
+                  >
+                    A+ تكبير التحديد
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => resizeSelection(-0.15)}
+                    className="text-xs bg-brand-50 border border-brand-200 rounded-lg px-2 py-1 hover:bg-brand-100"
+                  >
+                    A- تصغير التحديد
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearSelectionFormat}
+                    className="text-xs text-red-600 border border-red-200 rounded-lg px-2 py-1 hover:bg-red-50"
+                  >
+                    إزالة تنسيق التحديد
+                  </button>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
