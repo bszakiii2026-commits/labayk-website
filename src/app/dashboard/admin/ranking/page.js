@@ -94,6 +94,11 @@ export default async function RankingPage({ searchParams }) {
           >
             تصدير CSV
           </a>
+          {(templatesCount || 0) > 0 && (
+            <a href="/dashboard/admin/certificates/manual" className="btn-secondary">
+              🎓 شهادة يدوية
+            </a>
+          )}
         </div>
       </div>
 

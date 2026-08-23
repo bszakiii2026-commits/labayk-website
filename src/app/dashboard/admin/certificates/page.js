@@ -27,11 +27,16 @@ export default async function CertificatesPage() {
             شهادة كل طالب من لوحة الترتيب.
           </p>
         </div>
-        <form action={createTemplate}>
-          <button type="submit" className="btn-primary">
-            + قالب جديد
-          </button>
-        </form>
+        <div className="flex items-center gap-3 shrink-0">
+          <Link href="/dashboard/admin/certificates/manual" className="btn-secondary">
+            🎓 شهادة يدوية
+          </Link>
+          <form action={createTemplate}>
+            <button type="submit" className="btn-primary">
+              + قالب جديد
+            </button>
+          </form>
+        </div>
       </div>
 
       {(!templates || templates.length === 0) && (
