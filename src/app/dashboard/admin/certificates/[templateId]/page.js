@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/profile";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getActiveSchoolYear } from "@/lib/schoolYear";
+import { resolveCertificateAssetUrl } from "@/lib/certificateVariables";
 import BackButton from "@/components/BackButton";
 import CertificateEditor from "@/components/CertificateEditor";
 
@@ -23,13 +24,10 @@ export default async function CertificateEditorPage({ params }) {
   const template = templateRes.data;
   if (!template) notFound();
 
-  let backgroundImageUrl = null;
-  if (template.background_image_path) {
-    const { data: pub } = supabase.storage
-      .from("site-assets")
-      .getPublicUrl(template.background_image_path);
-    backgroundImageUrl = pub?.publicUrl || null;
-  }
+  const backgroundImageUrl = resolveCertificateAssetUrl(
+    supabase,
+    template.background_image_path
+  );
 
   return (
     <div className="space-y-4">

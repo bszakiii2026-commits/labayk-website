@@ -4,8 +4,11 @@ import { useMemo, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   CERTIFICATE_PLACEHOLDERS,
+  CERTIFICATE_FONTS,
   SAMPLE_CERTIFICATE_DATA,
   fillCertificateText,
+  resolveCertificateFontFamily,
+  resolveCertificateAssetUrl,
 } from "@/lib/certificateVariables";
 import {
   saveTemplate,
@@ -16,6 +19,7 @@ import {
 function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n));
 }
+
 
 function uid() {
   return "el_" + Math.random().toString(36).slice(2, 10);
@@ -241,9 +245,7 @@ export default function CertificateEditor({
 
   function elementImageSrc(el) {
     if (el.imagePath === "__LOGO__") return associationLogoUrl;
-    if (!el.imagePath) return null;
-    const { data } = supabase.storage.from("site-assets").getPublicUrl(el.imagePath);
-    return data?.publicUrl || null;
+    return resolveCertificateAssetUrl(supabase, el.imagePath);
   }
 
   return (
@@ -355,6 +357,7 @@ export default function CertificateEditor({
                     style={{
                       fontSize: `${el.fontSize}cqw`,
                       fontWeight: el.fontWeight,
+                      fontFamily: resolveCertificateFontFamily(el.fontFamily),
                       color: el.color,
                       textAlign: el.align,
                       whiteSpace: "pre-wrap",
@@ -477,6 +480,29 @@ export default function CertificateEditor({
                     </button>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label className="label">الخط</label>
+                <select
+                  value={selectedElement.fontFamily || ""}
+                  onChange={(e) =>
+                    updateElement(selectedElement.id, {
+                      fontFamily: e.target.value || undefined,
+                    })
+                  }
+                  className="input"
+                  style={{ fontFamily: resolveCertificateFontFamily(selectedElement.fontFamily) }}
+                >
+                  {CERTIFICATE_FONTS.map((f) => (
+                    <option
+                      key={f.label}
+                      value={f.key || ""}
+                      style={{ fontFamily: resolveCertificateFontFamily(f.key) }}
+                    >
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="label">المحاذاة</label>

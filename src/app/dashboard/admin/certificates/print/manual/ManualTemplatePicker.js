@@ -13,6 +13,7 @@ export default function ManualTemplatePicker({
   average,
   rank,
   year,
+  date,
 }) {
   const router = useRouter();
 
@@ -24,6 +25,7 @@ export default function ManualTemplatePicker({
     if (average) params.set("average", average);
     if (rank) params.set("rank", rank);
     if (year) params.set("year", year);
+    if (date) params.set("date", date);
     return `/dashboard/admin/certificates/print/manual?${params.toString()}`;
   }
 

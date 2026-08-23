@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/profile";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { resolveCertificateAssetUrl } from "@/lib/certificateVariables";
 import CertificateRender from "@/components/CertificateRender";
 import BackButton from "@/components/BackButton";
 import ManualTemplatePicker from "./ManualTemplatePicker";
@@ -10,7 +11,7 @@ import ManualTemplatePicker from "./ManualTemplatePicker";
 // report_cards) — البيانات كلها تأتي من رابط الصفحة نفسه (searchParams)
 // كما أدخلها المشرف العام في نموذج /dashboard/admin/certificates/manual.
 export default async function ManualCertificatePrintPage({ searchParams }) {
-  const { name, grade, average, rank, year, template: templateId } =
+  const { name, grade, average, rank, year, date, template: templateId } =
     (await searchParams) || {};
 
   const profile = await getCurrentProfile();
@@ -40,23 +41,20 @@ export default async function ManualCertificatePrintPage({ searchParams }) {
 
   const activeTemplate = templates.find((t) => t.id === templateId) || templates[0];
 
-  let backgroundImageUrl = null;
-  if (activeTemplate.background_image_path) {
-    const { data: pub } = supabase.storage
-      .from("site-assets")
-      .getPublicUrl(activeTemplate.background_image_path);
-    backgroundImageUrl = pub?.publicUrl || null;
-  }
+  const backgroundImageUrl = resolveCertificateAssetUrl(
+    supabase,
+    activeTemplate.background_image_path
+  );
 
   const elementsWithSrc = (activeTemplate.elements || []).map((el) => {
     if (el.type !== "image") return el;
     if (el.imagePath === "__LOGO__") return { ...el, resolvedSrc: logoUrl };
-    const { data: pub } = supabase.storage.from("site-assets").getPublicUrl(el.imagePath);
-    return { ...el, resolvedSrc: pub?.publicUrl || null };
+    return { ...el, resolvedSrc: resolveCertificateAssetUrl(supabase, el.imagePath) };
   });
 
   const data = {
     name,
+    date: date || "",
     grade_level: grade || "",
     average: average || "",
     rank: rank || "",
@@ -79,6 +77,7 @@ export default async function ManualCertificatePrintPage({ searchParams }) {
           average={average}
           rank={rank}
           year={year}
+          date={date}
         />
       </div>
 

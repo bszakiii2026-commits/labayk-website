@@ -1,4 +1,4 @@
-import { fillCertificateText } from "@/lib/certificateVariables";
+import { fillCertificateText, resolveCertificateFontFamily } from "@/lib/certificateVariables";
 
 // عرض شهادة جاهزة للطباعة (بدون تفاعل تعديل)، تُستعمل في صفحة الطباعة لكل
 // طالب. template.elements يجب أن تحتوي resolvedSrc جاهزاً لأي عنصر صورة.
@@ -53,6 +53,7 @@ export default function CertificateRender({ template, backgroundImageUrl, data }
                 style={{
                   fontSize: `${el.fontSize}cqw`,
                   fontWeight: el.fontWeight,
+                  fontFamily: resolveCertificateFontFamily(el.fontFamily),
                   color: el.color,
                   textAlign: el.align,
                   whiteSpace: "pre-wrap",

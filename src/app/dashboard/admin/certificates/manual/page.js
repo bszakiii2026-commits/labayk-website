@@ -96,6 +96,10 @@ export default async function ManualCertificatePage() {
                 dir="ltr"
               />
             </div>
+            <div>
+              <label className="label">التاريخ (اختياري)</label>
+              <input name="date" type="date" className="input" dir="ltr" />
+            </div>
           </div>
 
           <div>
