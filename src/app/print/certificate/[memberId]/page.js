@@ -92,7 +92,7 @@ export default async function CertificatePrintPage({ params, searchParams }) {
   const renderTemplate = { ...activeTemplate, elements: elementsWithSrc };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+    <div className="max-w-3xl mx-auto px-4 py-6 space-y-4 print:p-0 print:m-0 print:max-w-none print:space-y-0">
       <div className="print:hidden space-y-4">
         <BackButton href="/dashboard/admin/ranking" />
         <TemplatePicker

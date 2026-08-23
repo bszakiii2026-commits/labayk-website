@@ -18,6 +18,9 @@ export default function CertificateRender({ template, backgroundImageUrl, data }
             color-adjust: exact !important;
           }
           .cert-print-canvas {
+            position: fixed !important;
+            inset: 0 !important;
+            margin: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
             max-width: none !important;
